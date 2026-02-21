@@ -2,10 +2,14 @@ import torch
 import models
 
 import get_data
+from torch.utils.tensorboard import SummaryWriter
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model = models.ModelSimple().to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=2e-4)
+
+# 添加TensorBoard记录器
+writer = SummaryWriter('./runs/sentiment')
 
 loss_func = torch.nn.CrossEntropyLoss() # 交叉熵损失函数
 
@@ -41,16 +45,21 @@ for epoch in (range(21)):
     train_loss /= train_num
     train_correct /= train_num
     print("train_loss:", train_loss, "train_correct:", train_correct)
+    
+    # 记录训练数据到TensorBoard
+    writer.add_scalar('Loss/train', train_loss, epoch)
+    writer.add_scalar('Accuracy/train', train_correct, epoch)
 
     test_pred = model(torch.tensor(dev_list).to(device))
     correct = (torch.argmax(test_pred, dim=-1) == (torch.tensor(dev_labels).to(device))).type(torch.float).sum().item() / len(test_pred)
     print("test_acc:",correct)
+    
+    # 记录测试准确率到TensorBoard
+    writer.add_scalar('Accuracy/test', correct, epoch)
     print("-------------------")
 
-
-
-
-
+# 训练结束后关闭TensorBoard记录器
+writer.close()
 
 
 
